@@ -1,0 +1,30 @@
+{
+  "manifest_version": 2,
+  "name": "Save Links",
+  "version": "1.0",
+
+  "description": "Save links to read later, add a comment for each link",
+
+  "homepage_url": "https://github.com/mdn/webextensions-examples/tree/main/beastify",
+
+  "icons": {
+    "48": "icons/links-48.png"
+  },
+
+  "permissions": ["activeTab", "storage"],
+
+  "browser_action": {
+    "default_icon": "icons/links-48.png",
+    "default_title": "Save links",
+    "default_popup": "popup/save_links.html"
+  },
+
+  "web_accessible_resources": [],
+
+  "content_scripts": [
+    {
+      "matches": ["*://*.mozilla.org/*"],
+      "js": ["save_content_links.js"]
+    }
+  ]
+}
