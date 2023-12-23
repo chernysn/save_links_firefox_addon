@@ -1,11 +1,11 @@
 {
   "manifest_version": 2,
   "name": "Save Links",
-  "version": "1.0",
+  "version": "1.7",
 
   "description": "Save links to read later, add a comment for each link",
 
-  "homepage_url": "https://github.com/mdn/webextensions-examples/tree/main/beastify",
+  "homepage_url": "http://www.google.com",
 
   "icons": {
     "48": "icons/links-48.png"
@@ -24,7 +24,13 @@
   "content_scripts": [
     {
       "matches": ["*://*.mozilla.org/*"],
-      "js": ["save_content_links.js"]
+      "js": ["content_scripts/save_content_links.js"]
     }
-  ]
+  ],
+
+  "browser_specific_settings": {
+    "gecko": {
+      "id": "{f38a6b5f-4c30-4c00-a439-fc8f42ed8a45}"
+    }
+  }
 }

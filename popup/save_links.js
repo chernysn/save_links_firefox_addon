@@ -16,50 +16,161 @@ getCurrentTabUrl(function (tabInfo) {
   document.getElementById("title").value = tabInfo.title;
 });
 
+var help = document.querySelector(".help");
+var helpInfo = document.querySelector(".help-container");
+help.addEventListener("click", () => {
+  helpInfo.style.display = "block";
+});
+
+var all_links = [];
+let all_tags = [];
+
+async function run() {
+  const storageData_display = await browser.storage.local.get("links_saved");
+  const links_saved_display = storageData_display["links_saved"] || {};
+  displayOnPage(links_saved_display);
+  showInputTags(links_saved_display);
+}
+
+let tagField = document.querySelector(".tags-used");
+let tags = document.getElementById("tags");
+
+async function displayOnPage(links) {
+  output_items.innerHTML = "";
+  if (links.length === 0) {
+    output_items.innerHTML = "<br><p>No messages to display yet ... </p>";
+  } else {
+    Object.values(links).forEach((link) => {
+      let li = document.createElement("li");
+      let text = `<p class="address"><a href="${link.address}">${
+        link.title
+      } </a></p>
+      <p>${link.comment}</p> ${
+        link.tags !== ""
+          ? `<div class="tag-div" data-tags="${link.tags}">${link.tags}</div>`
+          : ""
+      } <div class="remove">remove</div>`;
+
+      li.innerHTML = text;
+      output_items.appendChild(li);
+
+      let tagDiv = li.querySelector(".tag-div");
+      if (tagDiv) {
+        tagDiv.addEventListener("click", () => {
+          searchByTag(link.tags);
+        });
+      }
+
+      let removeDiv = li.querySelector(".remove");
+      removeDiv.addEventListener("click", () => {
+        removeItem(link.id);
+      });
+    });
+  }
+}
+
 var btn = document.getElementById("save");
 var output_items = document.querySelector(".output_list");
 
-var all_links = {};
-
-async function run() {
-  let storageData = await browser.storage.local.get("links_saved");
-  let links_saved = storageData["links_saved"] || {};
-  all_links = links_saved;
-  displayOnPage();
-}
-
 btn.addEventListener("click", async () => {
+  let storageData = await browser.storage.local.get("links_saved");
+  all_links = storageData.links_saved || [];
   let address = document.getElementById("link").value;
   let comment = document.getElementById("description").value;
   let title = document.getElementById("title").value;
-  all_links[title] = { address: address, title: title, comment: comment };
+  let getTag = tags.value;
+  let index = all_links.id;
+
+  let titleExists = false;
+
+  for (i = 0; i < all_links.length; i++) {
+    if (all_links[i].title === title) {
+      all_links[i] = {
+        address: address,
+        title: title,
+        comment: comment,
+        tags: getTag,
+      };
+      titleExists = true;
+      break;
+    }
+  }
+
+  if (!titleExists) {
+    const index = 0 + all_links.length;
+    all_links.push({
+      id: index,
+      address: address,
+      title: title,
+      comment: comment,
+      tags: getTag,
+    });
+  }
+
   await browser.storage.local.set({ links_saved: all_links });
-  displayOnPage();
+  let getLinks = await browser.storage.local.get("links_saved");
+  all_links = getLinks.links_saved || [];
+  displayOnPage(all_links);
+  showInputTags(all_links);
+
   document.getElementById("description").value = "";
 });
 
-async function displayOnPage() {
-  let storageData = await browser.storage.local.get("links_saved");
-  let links_saved = storageData["links_saved"] || {};
-  output_items.innerHTML = "";
-  Object.values(links_saved).forEach((link) => {
-    output_items.innerHTML += `<li>
-      <p class="address"><a href="${link.address}">${link.title}</a></p>
-      <p>${link.comment}</p>
-      <p class="remove">remove</p> 
-    </li>`;
+async function showInputTags(links) {
+  links.forEach((link) => {
+    all_tags.push(link.tags);
   });
 
-  var removeItems = document.querySelectorAll(".remove");
+  function getUniqueTags(data) {
+    return [...new Set(data)];
+  }
 
-  removeItems.forEach((item, index) => {
-    item.addEventListener("click", async () => {
-      let updated_links = Object.values(links_saved);
-      updated_links.splice(index, 1);
-      all_links = updated_links;
-      await browser.storage.local.set({ links_saved: all_links });
-      displayOnPage();
-    });
+  function handleTagClick(event) {
+    let clickedTag = event.target.textContent;
+    tags.value = clickedTag;
+  }
+
+  let uniqueTags = getUniqueTags(all_tags);
+
+  tagField.innerHTML = "";
+  for (let tag of uniqueTags) {
+    if (tag != "") {
+      let tagDiv = document.createElement("div");
+      tagDiv.className = "tag-div-input";
+      tagDiv.textContent = tag;
+      tagDiv.addEventListener("click", handleTagClick);
+      tagField.appendChild(tagDiv);
+    }
+  }
+}
+
+async function removeItem(index) {
+  const storageData = await browser.storage.local.get("links_saved");
+  all_links = storageData.links_saved || [];
+  const itemToRemove = all_links.find((item) => item.id === index);
+  const indexToRemove = all_links.indexOf(itemToRemove);
+  all_links.splice(indexToRemove, 1);
+  await browser.storage.local.set({ links_saved: all_links });
+  displayOnPage(all_links);
+  showInputTags(all_links);
+}
+
+var main = document.querySelector(".main");
+async function searchByTag(tag) {
+  const storageData = await browser.storage.local.get("links_saved");
+  all_links = storageData.links_saved || [];
+  const foundLinks = [];
+  all_links.forEach((link) => {
+    if (link.tags === tag) {
+      foundLinks.push(link);
+    }
+  });
+
+  displayOnPage(foundLinks);
+
+  main.addEventListener("click", () => {
+    console.log("CLICK");
+    displayOnPage(all_links);
   });
 }
 
